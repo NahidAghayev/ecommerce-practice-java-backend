@@ -1,14 +1,14 @@
 package com.aghayev.ecommerce.exception;
 
-public class ResourceNotFoundException extends RuntimeException {
+public class InsufficientStockException extends RuntimeException {
 
     private final String fieldName;
 
-    public ResourceNotFoundException(String message) {
+    public InsufficientStockException(String message) {
         this(message, null);
     }
 
-    public ResourceNotFoundException(String message, String fieldName) {
+    public InsufficientStockException(String message, String fieldName) {
         super(message);
         this.fieldName = fieldName;
     }

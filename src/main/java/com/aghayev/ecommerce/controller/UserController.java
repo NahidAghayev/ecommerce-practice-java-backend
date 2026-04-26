@@ -1,5 +1,6 @@
 package com.aghayev.ecommerce.controller;
 
+import com.aghayev.ecommerce.dto.ApiResponse;
 import com.aghayev.ecommerce.dto.UserCreateRequestDto;
 import com.aghayev.ecommerce.dto.UserResponseDto;
 import com.aghayev.ecommerce.dto.UserUpdateRequestDto;
@@ -27,34 +28,37 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserCreateRequestDto requestDto) {
+    public ResponseEntity<ApiResponse<UserResponseDto>> createUser(@Valid @RequestBody UserCreateRequestDto requestDto) {
         UserResponseDto createdUser = userService.createUser(requestDto);
         return ResponseEntity
                 .created(URI.create("/api/users/" + createdUser.id()))
-                .body(createdUser);
+                .body(ApiResponse.success(createdUser, "User created successfully"));
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<ApiResponse<List<UserResponseDto>>> getAllUsers() {
+        return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers(), "Users retrieved successfully"));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public ResponseEntity<ApiResponse<UserResponseDto>> getUserById(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id), "User retrieved successfully"));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDto> updateUser(
+    public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UserUpdateRequestDto requestDto
     ) {
-        return ResponseEntity.ok(userService.updateUser(id, requestDto));
+        return ResponseEntity.ok(ApiResponse.success(
+                userService.updateUser(id, requestDto),
+                "User updated successfully"
+        ));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "User deleted successfully"));
     }
 }

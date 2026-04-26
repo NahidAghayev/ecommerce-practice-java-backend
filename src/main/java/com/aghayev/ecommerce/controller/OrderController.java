@@ -1,5 +1,6 @@
 package com.aghayev.ecommerce.controller;
 
+import com.aghayev.ecommerce.dto.ApiResponse;
 import com.aghayev.ecommerce.dto.OrderRequestDto;
 import com.aghayev.ecommerce.dto.OrderResponseDto;
 import com.aghayev.ecommerce.service.OrderService;
@@ -24,20 +25,20 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponseDto> placeOrder(@Valid @RequestBody OrderRequestDto requestDto) {
+    public ResponseEntity<ApiResponse<OrderResponseDto>> placeOrder(@Valid @RequestBody OrderRequestDto requestDto) {
         OrderResponseDto createdOrder = orderService.placeOrder(requestDto);
         return ResponseEntity
                 .created(URI.create("/api/orders/" + createdOrder.id()))
-                .body(createdOrder);
+                .body(ApiResponse.success(createdOrder, "Order placed successfully"));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable UUID id) {
-        return ResponseEntity.ok(orderService.getOrderById(id));
+    public ResponseEntity<ApiResponse<OrderResponseDto>> getOrderById(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(orderService.getOrderById(id), "Order retrieved successfully"));
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<OrderResponseDto>> getMyOrders() {
-        return ResponseEntity.ok(orderService.getMyOrders());
+    public ResponseEntity<ApiResponse<List<OrderResponseDto>>> getMyOrders() {
+        return ResponseEntity.ok(ApiResponse.success(orderService.getMyOrders(), "Orders retrieved successfully"));
     }
 }

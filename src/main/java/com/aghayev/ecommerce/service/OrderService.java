@@ -8,6 +8,8 @@ import com.aghayev.ecommerce.entity.Order;
 import com.aghayev.ecommerce.entity.OrderItem;
 import com.aghayev.ecommerce.entity.Product;
 import com.aghayev.ecommerce.entity.User;
+import com.aghayev.ecommerce.exception.BadRequestException;
+import com.aghayev.ecommerce.exception.InsufficientStockException;
 import com.aghayev.ecommerce.exception.ResourceNotFoundException;
 import com.aghayev.ecommerce.repository.OrderRepository;
 import com.aghayev.ecommerce.repository.ProductRepository;
@@ -16,12 +18,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -49,9 +49,9 @@ public class OrderService {
                     ));
 
             if (product.getStockQuantity() < itemRequest.quantity()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Insufficient stock for product: " + product.getName()
+                throw new InsufficientStockException(
+                        "Insufficient stock for product: " + product.getName(),
+                        "stockQuantity"
                 );
             }
 
@@ -92,7 +92,7 @@ public class OrderService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getName())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authenticated");
+            throw new BadRequestException("User is not authenticated");
         }
 
         return userRepository.findByEmail(authentication.getName())

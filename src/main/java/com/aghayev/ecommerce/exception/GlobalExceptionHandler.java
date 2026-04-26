@@ -1,9 +1,11 @@
 package com.aghayev.ecommerce.exception;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.aghayev.ecommerce.dto.ApiResponse;
+import com.aghayev.ecommerce.dto.ValidationErrorResponseDto;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,33 +15,58 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ProblemDetail handleResourceNotFound(ResourceNotFoundException exception) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
-        problemDetail.setTitle("Resource not found");
-        return problemDetail;
+    public ResponseEntity<ApiResponse<ValidationErrorResponseDto>> handleResourceNotFound(
+            ResourceNotFoundException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(
+                        exception.getMessage(),
+                        new ValidationErrorResponseDto(exception.getFieldName(), exception.getMessage())
+                ));
     }
 
-    @ExceptionHandler(DuplicateEmailException.class)
-    public ProblemDetail handleDuplicateEmail(DuplicateEmailException exception) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
-        problemDetail.setTitle("Conflict");
-        return problemDetail;
+    @ExceptionHandler({BadRequestException.class, InsufficientStockException.class})
+    public ResponseEntity<ApiResponse<ValidationErrorResponseDto>> handleBadRequest(RuntimeException exception) {
+        String fieldName = null;
+        if (exception instanceof BadRequestException badRequestException) {
+            fieldName = badRequestException.getFieldName();
+        } else if (exception instanceof InsufficientStockException insufficientStockException) {
+            fieldName = insufficientStockException.getFieldName();
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(
+                        exception.getMessage(),
+                        new ValidationErrorResponseDto(fieldName, exception.getMessage())
+                ));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleValidation(MethodArgumentNotValidException exception) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                "Request validation failed"
-        );
-        problemDetail.setTitle("Validation error");
+    public ResponseEntity<ApiResponse<List<ValidationErrorResponseDto>>> handleValidation(
+            MethodArgumentNotValidException exception
+    ) {
+        List<ValidationErrorResponseDto> fieldErrors = exception.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(this::toValidationError)
+                .toList();
 
-        Map<String, String> errors = new LinkedHashMap<>();
-        for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
-            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(
+                        false,
+                        fieldErrors,
+                        "Request validation failed",
+                        LocalDateTime.now()
+                ));
+    }
 
-        problemDetail.setProperty("errors", errors);
-        return problemDetail;
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleException(Exception exception) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("An unexpected error occurred", null));
+    }
+
+    private ValidationErrorResponseDto toValidationError(FieldError fieldError) {
+        return new ValidationErrorResponseDto(fieldError.getField(), fieldError.getDefaultMessage());
     }
 }

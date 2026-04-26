@@ -4,7 +4,7 @@ import com.aghayev.ecommerce.dto.UserCreateRequestDto;
 import com.aghayev.ecommerce.dto.UserResponseDto;
 import com.aghayev.ecommerce.dto.UserUpdateRequestDto;
 import com.aghayev.ecommerce.entity.User;
-import com.aghayev.ecommerce.exception.DuplicateEmailException;
+import com.aghayev.ecommerce.exception.BadRequestException;
 import com.aghayev.ecommerce.exception.ResourceNotFoundException;
 import com.aghayev.ecommerce.repository.UserRepository;
 import java.util.List;
@@ -72,7 +72,7 @@ public class UserService {
 
     private void validateEmailUniqueness(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new DuplicateEmailException("Email already exists");
+            throw new BadRequestException("Email already exists", "email");
         }
     }
 

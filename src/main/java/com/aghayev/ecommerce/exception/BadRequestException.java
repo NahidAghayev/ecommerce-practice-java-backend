@@ -1,14 +1,14 @@
 package com.aghayev.ecommerce.exception;
 
-public class ResourceNotFoundException extends RuntimeException {
+public class BadRequestException extends RuntimeException {
 
     private final String fieldName;
 
-    public ResourceNotFoundException(String message) {
+    public BadRequestException(String message) {
         this(message, null);
     }
 
-    public ResourceNotFoundException(String message, String fieldName) {
+    public BadRequestException(String message, String fieldName) {
         super(message);
         this.fieldName = fieldName;
     }
