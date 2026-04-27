@@ -1,12 +1,13 @@
 package com.aghayev.ecommerce.service;
 
 import com.aghayev.ecommerce.config.LogExecutionTime;
-import com.aghayev.ecommerce.dto.UserCreateRequestDto;
-import com.aghayev.ecommerce.dto.UserResponseDto;
-import com.aghayev.ecommerce.dto.UserUpdateRequestDto;
+import com.aghayev.ecommerce.dto.request.UserCreateRequestDto;
+import com.aghayev.ecommerce.dto.request.UserUpdateRequestDto;
+import com.aghayev.ecommerce.dto.response.UserResponseDto;
 import com.aghayev.ecommerce.entity.User;
 import com.aghayev.ecommerce.exception.BadRequestException;
 import com.aghayev.ecommerce.exception.ResourceNotFoundException;
+import com.aghayev.ecommerce.mapper.UserMapper;
 import com.aghayev.ecommerce.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @LogExecutionTime
@@ -29,15 +31,11 @@ public class UserService {
         log.info("action=createUser email={} role={}", requestDto.email(), requestDto.role());
         validateEmailUniqueness(requestDto.email());
 
-        User user = User.builder()
-                .email(requestDto.email())
-                .password(passwordEncoder.encode(requestDto.password()))
-                .role(requestDto.role())
-                .build();
+        User user = userMapper.toEntity(requestDto, passwordEncoder.encode(requestDto.password()));
 
         User savedUser = userRepository.save(user);
         log.info("action=createUser status=SUCCESS userId={}", savedUser.getId());
-        return toResponseDto(savedUser);
+        return userMapper.toResponseDto(savedUser);
     }
 
     @LogExecutionTime
@@ -45,14 +43,14 @@ public class UserService {
         log.debug("action=getAllUsers");
         return userRepository.findAll()
                 .stream()
-                .map(this::toResponseDto)
+                .map(userMapper::toResponseDto)
                 .toList();
     }
 
     @LogExecutionTime
     public UserResponseDto getUserById(UUID id) {
         log.debug("action=getUserById userId={}", id);
-        return toResponseDto(findUserById(id));
+        return userMapper.toResponseDto(findUserById(id));
     }
 
     @LogExecutionTime
@@ -64,16 +62,16 @@ public class UserService {
             validateEmailUniqueness(requestDto.email());
         }
 
-        user.setEmail(requestDto.email());
-        user.setRole(requestDto.role());
+        String encodedPassword = null;
         if (requestDto.password() != null && !requestDto.password().isBlank()) {
-            user.setPassword(passwordEncoder.encode(requestDto.password()));
+            encodedPassword = passwordEncoder.encode(requestDto.password());
             log.debug("action=updateUser passwordChanged=true userId={}", id);
         }
+        userMapper.updateEntity(user, requestDto, encodedPassword);
 
         User updatedUser = userRepository.save(user);
         log.info("action=updateUser status=SUCCESS userId={}", updatedUser.getId());
-        return toResponseDto(updatedUser);
+        return userMapper.toResponseDto(updatedUser);
     }
 
     @LogExecutionTime
@@ -94,15 +92,5 @@ public class UserService {
             log.warn("action=validateEmailUniqueness status=DUPLICATE email={}", email);
             throw new BadRequestException("Email already exists", "email");
         }
-    }
-
-    private UserResponseDto toResponseDto(User user) {
-        return new UserResponseDto(
-                user.getId(),
-                user.getEmail(),
-                user.getRole(),
-                user.getCreatedAt(),
-                user.getUpdatedAt()
-        );
     }
 }

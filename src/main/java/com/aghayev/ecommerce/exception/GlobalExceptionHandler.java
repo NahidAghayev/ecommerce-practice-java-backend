@@ -1,7 +1,7 @@
 package com.aghayev.ecommerce.exception;
 
 import com.aghayev.ecommerce.dto.ApiResponse;
-import com.aghayev.ecommerce.dto.ValidationErrorResponseDto;
+import com.aghayev.ecommerce.dto.response.ValidationErrorResponseDto;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.http.HttpStatus;

@@ -1,10 +1,9 @@
 package com.aghayev.ecommerce.service;
 
 import com.aghayev.ecommerce.config.LogExecutionTime;
-import com.aghayev.ecommerce.dto.OrderItemRequestDto;
-import com.aghayev.ecommerce.dto.OrderItemResponseDto;
-import com.aghayev.ecommerce.dto.OrderRequestDto;
-import com.aghayev.ecommerce.dto.OrderResponseDto;
+import com.aghayev.ecommerce.dto.request.OrderItemRequestDto;
+import com.aghayev.ecommerce.dto.request.OrderRequestDto;
+import com.aghayev.ecommerce.dto.response.OrderResponseDto;
 import com.aghayev.ecommerce.entity.Order;
 import com.aghayev.ecommerce.entity.OrderItem;
 import com.aghayev.ecommerce.entity.Product;
@@ -12,6 +11,7 @@ import com.aghayev.ecommerce.entity.User;
 import com.aghayev.ecommerce.exception.BadRequestException;
 import com.aghayev.ecommerce.exception.InsufficientStockException;
 import com.aghayev.ecommerce.exception.ResourceNotFoundException;
+import com.aghayev.ecommerce.mapper.OrderMapper;
 import com.aghayev.ecommerce.repository.OrderRepository;
 import com.aghayev.ecommerce.repository.ProductRepository;
 import com.aghayev.ecommerce.repository.UserRepository;
@@ -33,6 +33,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final OrderMapper orderMapper;
 
     @LogExecutionTime
     @Transactional
@@ -97,7 +98,7 @@ public class OrderService {
                 currentUser.getId(),
                 savedOrder.getTotalAmount()
         );
-        return toResponseDto(savedOrder);
+        return orderMapper.toResponseDto(savedOrder);
     }
 
     @LogExecutionTime
@@ -106,7 +107,7 @@ public class OrderService {
         log.debug("action=getOrderById orderId={}", id);
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
-        return toResponseDto(order);
+        return orderMapper.toResponseDto(order);
     }
 
     @LogExecutionTime
@@ -116,7 +117,7 @@ public class OrderService {
         log.debug("action=getMyOrders userId={}", currentUser.getId());
         return orderRepository.findByUserOrderByCreatedAtDesc(currentUser)
                 .stream()
-                .map(this::toResponseDto)
+                .map(orderMapper::toResponseDto)
                 .toList();
     }
 
@@ -133,23 +134,5 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Authenticated user not found with email: " + authentication.getName()
                 ));
-    }
-
-    private OrderResponseDto toResponseDto(Order order) {
-        return new OrderResponseDto(
-                order.getId(),
-                order.getUser().getId(),
-                order.getStatus(),
-                order.getTotalAmount(),
-                order.getCreatedAt(),
-                order.getOrderItems().stream()
-                        .map(orderItem -> new OrderItemResponseDto(
-                                orderItem.getProduct().getId(),
-                                orderItem.getProduct().getName(),
-                                orderItem.getQuantity(),
-                                orderItem.getUnitPrice()
-                        ))
-                        .toList()
-        );
     }
 }

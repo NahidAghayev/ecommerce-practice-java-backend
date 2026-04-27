@@ -1,8 +1,8 @@
 package com.aghayev.ecommerce.controller;
 
 import com.aghayev.ecommerce.dto.ApiResponse;
-import com.aghayev.ecommerce.dto.ProductRequestDto;
-import com.aghayev.ecommerce.dto.ProductResponseDto;
+import com.aghayev.ecommerce.dto.request.ProductRequestDto;
+import com.aghayev.ecommerce.dto.response.ProductResponseDto;
 import com.aghayev.ecommerce.service.ProductService;
 import jakarta.validation.Valid;
 import java.net.URI;

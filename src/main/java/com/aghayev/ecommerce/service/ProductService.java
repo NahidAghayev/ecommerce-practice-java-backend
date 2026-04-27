@@ -1,10 +1,11 @@
 package com.aghayev.ecommerce.service;
 
 import com.aghayev.ecommerce.config.LogExecutionTime;
-import com.aghayev.ecommerce.dto.ProductRequestDto;
-import com.aghayev.ecommerce.dto.ProductResponseDto;
+import com.aghayev.ecommerce.dto.request.ProductRequestDto;
+import com.aghayev.ecommerce.dto.response.ProductResponseDto;
 import com.aghayev.ecommerce.entity.Product;
 import com.aghayev.ecommerce.exception.ResourceNotFoundException;
+import com.aghayev.ecommerce.mapper.ProductMapper;
 import com.aghayev.ecommerce.repository.ProductRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
     @LogExecutionTime
     public Page<ProductResponseDto> getProducts(Pageable pageable, String category) {
@@ -33,13 +35,13 @@ public class ProductService {
                 ? productRepository.findAll(pageable)
                 : productRepository.findByCategory(category, pageable);
 
-        return products.map(this::toResponseDto);
+        return products.map(productMapper::toResponseDto);
     }
 
     @LogExecutionTime
     public ProductResponseDto getProductById(UUID id) {
         log.debug("action=getProductById productId={}", id);
-        return toResponseDto(findProductById(id));
+        return productMapper.toResponseDto(findProductById(id));
     }
 
     @LogExecutionTime
@@ -51,17 +53,11 @@ public class ProductService {
                 requestDto.price(),
                 requestDto.stockQuantity()
         );
-        Product product = Product.builder()
-                .name(requestDto.name())
-                .description(requestDto.description())
-                .price(requestDto.price())
-                .stockQuantity(requestDto.stockQuantity())
-                .category(requestDto.category())
-                .build();
+        Product product = productMapper.toEntity(requestDto);
 
         Product savedProduct = productRepository.save(product);
         log.info("action=createProduct status=SUCCESS productId={}", savedProduct.getId());
-        return toResponseDto(savedProduct);
+        return productMapper.toResponseDto(savedProduct);
     }
 
     @LogExecutionTime
@@ -76,15 +72,11 @@ public class ProductService {
         );
         Product product = findProductById(id);
 
-        product.setName(requestDto.name());
-        product.setDescription(requestDto.description());
-        product.setPrice(requestDto.price());
-        product.setStockQuantity(requestDto.stockQuantity());
-        product.setCategory(requestDto.category());
+        productMapper.updateEntity(product, requestDto);
 
         Product updatedProduct = productRepository.save(product);
         log.info("action=updateProduct status=SUCCESS productId={}", updatedProduct.getId());
-        return toResponseDto(updatedProduct);
+        return productMapper.toResponseDto(updatedProduct);
     }
 
     @LogExecutionTime
@@ -98,18 +90,5 @@ public class ProductService {
     private Product findProductById(UUID id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-    }
-
-    private ProductResponseDto toResponseDto(Product product) {
-        return new ProductResponseDto(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStockQuantity(),
-                product.getCategory(),
-                product.getCreatedAt(),
-                product.getUpdatedAt()
-        );
     }
 }

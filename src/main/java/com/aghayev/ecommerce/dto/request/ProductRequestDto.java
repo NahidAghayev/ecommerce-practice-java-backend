@@ -1,4 +1,4 @@
-package com.aghayev.ecommerce.dto;
+package com.aghayev.ecommerce.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

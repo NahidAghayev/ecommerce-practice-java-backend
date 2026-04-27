@@ -1,9 +1,9 @@
 package com.aghayev.ecommerce.controller;
 
 import com.aghayev.ecommerce.dto.ApiResponse;
-import com.aghayev.ecommerce.dto.UserCreateRequestDto;
-import com.aghayev.ecommerce.dto.UserResponseDto;
-import com.aghayev.ecommerce.dto.UserUpdateRequestDto;
+import com.aghayev.ecommerce.dto.request.UserCreateRequestDto;
+import com.aghayev.ecommerce.dto.request.UserUpdateRequestDto;
+import com.aghayev.ecommerce.dto.response.UserResponseDto;
 import com.aghayev.ecommerce.service.UserService;
 import jakarta.validation.Valid;
 import java.net.URI;

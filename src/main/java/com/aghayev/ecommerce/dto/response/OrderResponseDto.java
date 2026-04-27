@@ -1,4 +1,4 @@
-package com.aghayev.ecommerce.dto;
+package com.aghayev.ecommerce.dto.response;
 
 import com.aghayev.ecommerce.entity.Order.Status;
 import java.math.BigDecimal;

@@ -1,4 +1,4 @@
-package com.aghayev.ecommerce.dto;
+package com.aghayev.ecommerce.dto.response;
 
 import java.math.BigDecimal;
 import java.util.UUID;
