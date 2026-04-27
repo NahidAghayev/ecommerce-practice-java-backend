@@ -1,5 +1,6 @@
 package com.aghayev.ecommerce.service;
 
+import com.aghayev.ecommerce.config.LogExecutionTime;
 import com.aghayev.ecommerce.dto.OrderItemRequestDto;
 import com.aghayev.ecommerce.dto.OrderItemResponseDto;
 import com.aghayev.ecommerce.dto.OrderRequestDto;
@@ -18,11 +19,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -31,9 +34,15 @@ public class OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
 
+    @LogExecutionTime
     @Transactional
     public OrderResponseDto placeOrder(OrderRequestDto requestDto) {
         User currentUser = getCurrentAuthenticatedUser();
+        log.info(
+                "action=placeOrder userId={} itemCount={}",
+                currentUser.getId(),
+                requestDto.items().size()
+        );
         Order order = Order.builder()
                 .user(currentUser)
                 .status(Order.Status.PENDING)
@@ -48,7 +57,20 @@ public class OrderService {
                             "Product not found with id: " + itemRequest.productId()
                     ));
 
+            log.debug(
+                    "action=placeOrder productId={} requestedQuantity={} availableStock={}",
+                    product.getId(),
+                    itemRequest.quantity(),
+                    product.getStockQuantity()
+            );
+
             if (product.getStockQuantity() < itemRequest.quantity()) {
+                log.warn(
+                        "action=placeOrder status=INSUFFICIENT_STOCK productId={} requestedQuantity={} availableStock={}",
+                        product.getId(),
+                        itemRequest.quantity(),
+                        product.getStockQuantity()
+                );
                 throw new InsufficientStockException(
                         "Insufficient stock for product: " + product.getName(),
                         "stockQuantity"
@@ -69,19 +91,29 @@ public class OrderService {
 
         order.setTotalAmount(totalAmount);
         Order savedOrder = orderRepository.save(order);
+        log.info(
+                "action=placeOrder status=SUCCESS orderId={} userId={} totalAmount={}",
+                savedOrder.getId(),
+                currentUser.getId(),
+                savedOrder.getTotalAmount()
+        );
         return toResponseDto(savedOrder);
     }
 
+    @LogExecutionTime
     @Transactional(readOnly = true)
     public OrderResponseDto getOrderById(UUID id) {
+        log.debug("action=getOrderById orderId={}", id);
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
         return toResponseDto(order);
     }
 
+    @LogExecutionTime
     @Transactional(readOnly = true)
     public List<OrderResponseDto> getMyOrders() {
         User currentUser = getCurrentAuthenticatedUser();
+        log.debug("action=getMyOrders userId={}", currentUser.getId());
         return orderRepository.findByUserOrderByCreatedAtDesc(currentUser)
                 .stream()
                 .map(this::toResponseDto)
@@ -92,9 +124,11 @@ public class OrderService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getName())) {
+            log.warn("action=getCurrentAuthenticatedUser status=UNAUTHENTICATED");
             throw new BadRequestException("User is not authenticated");
         }
 
+        log.debug("action=getCurrentAuthenticatedUser email={}", authentication.getName());
         return userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Authenticated user not found with email: " + authentication.getName()

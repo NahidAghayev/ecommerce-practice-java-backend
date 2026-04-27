@@ -13,5 +13,7 @@ spring:
 
 logging:
   level:
-    com.yourlastname.ecommerce: DEBUG
+    root: INFO
+    com.aghayev.ecommerce: DEBUG
     org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
