@@ -23,7 +23,7 @@ public class JwtService {
     private long expiration;
 
 
-    public String genrateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())

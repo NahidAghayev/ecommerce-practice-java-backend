@@ -34,7 +34,7 @@ public class AuthService {
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(savedUser.getEmail());
 
-        String token = jwtService.genrateToken(userDetails);
+        String token = jwtService.generateToken(userDetails);
 
         return new AuthResponseDto(token);
     }
@@ -49,7 +49,7 @@ public class AuthService {
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(user.getEmail());
 
-        String token = jwtService.genrateToken(userDetails);
+        String token = jwtService.generateToken(userDetails);
 
         return new AuthResponseDto(token);
     }
