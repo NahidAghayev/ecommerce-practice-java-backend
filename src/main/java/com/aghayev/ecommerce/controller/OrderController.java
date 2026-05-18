@@ -3,6 +3,7 @@ package com.aghayev.ecommerce.controller;
 import com.aghayev.ecommerce.dto.ApiResponse;
 import com.aghayev.ecommerce.dto.PageResponse;
 import com.aghayev.ecommerce.dto.request.OrderRequestDto;
+import com.aghayev.ecommerce.dto.request.OrderStatusUpdateRequestDto;
 import com.aghayev.ecommerce.dto.response.OrderResponseDto;
 import com.aghayev.ecommerce.service.OrderService;
 import jakarta.validation.Valid;
@@ -12,12 +13,8 @@ import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -37,6 +34,17 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrderResponseDto>> getOrderById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(orderService.getOrderById(id), "Order retrieved successfully"));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<OrderResponseDto>> updateStatusByOrderId(
+            @PathVariable UUID id,
+            @Valid @RequestBody OrderStatusUpdateRequestDto requestDto
+    ) {
+        OrderResponseDto orderResponseDto = orderService.updateOrderStatus(id, requestDto);
+
+        return ResponseEntity.ok(ApiResponse.success(orderResponseDto, "Order status changed successfully"));
     }
 
     @GetMapping("/my")

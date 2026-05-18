@@ -4,6 +4,7 @@ import com.aghayev.ecommerce.config.LogExecutionTime;
 import com.aghayev.ecommerce.dto.PageResponse;
 import com.aghayev.ecommerce.dto.request.OrderItemRequestDto;
 import com.aghayev.ecommerce.dto.request.OrderRequestDto;
+import com.aghayev.ecommerce.dto.request.OrderStatusUpdateRequestDto;
 import com.aghayev.ecommerce.dto.response.OrderResponseDto;
 import com.aghayev.ecommerce.entity.Order;
 import com.aghayev.ecommerce.entity.OrderItem;
@@ -107,9 +108,25 @@ public class OrderService {
     @LogExecutionTime
     @Transactional(readOnly = true)
     public OrderResponseDto getOrderById(UUID id) {
-        log.debug("action=getOrderById orderId={}", id);
+
+        User currentUser = getCurrentAuthenticatedUser();
+
+        log.debug("action=getOrderById orderId={} requesterUserId={}", id, currentUser.getId());
+
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+
+        if (!canAccessOrder(currentUser, order)) {
+            log.warn(
+                    "action=getOrderById status=ACCESS_DENIED orderId={} requesterUserId={} ownerUserId={}",
+                    id,
+                    currentUser.getId(),
+                    order.getUser().getId()
+            );
+
+            throw new BadRequestException("You do not have permission to access this order", "orderId");
+        }
+
         return orderMapper.toResponseDto(order);
     }
 
@@ -125,6 +142,55 @@ public class OrderService {
         return PageResponse.from(mappedOrders);
     }
 
+    @LogExecutionTime
+    @Transactional
+    public OrderResponseDto updateOrderStatus(UUID id, OrderStatusUpdateRequestDto requestDto) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+
+        Order.Status currentStatus = order.getStatus();
+        Order.Status newStatus = requestDto.status();
+        log.info(
+                "action=updateOrderStatus orderId={} currentStatus={} newStatus={}",
+                id,
+                currentStatus,
+                newStatus
+        );
+        if (!isValidStatusTransition(currentStatus, newStatus)) {
+            log.warn(
+                    "action=updateOrderStatus status=INVALID_TRANSITION orderId={} currentStatus={} newStatus={}",
+                    id,
+                    currentStatus,
+                    newStatus
+            );
+
+            throw new BadRequestException("Invalid status transition from " + currentStatus + " to " + newStatus, "status");
+        }
+
+        if (newStatus == Order.Status.CANCELLED) {
+            log.info(
+                    "action=updateOrderStatus status=RESTORE_STOCK orderId={} currentStatus={} newStatus={}",
+                    id,
+                    currentStatus,
+                    newStatus
+            );
+
+            restoreStock(order);
+        }
+
+        order.setStatus(newStatus);
+        Order updatedOrder = orderRepository.save(order);
+
+        log.info(
+                "action=updateOrderStatus status=SUCCESS orderId={} previousStatus={} newStatus={}",
+                updatedOrder.getId(),
+                currentStatus,
+                newStatus
+        );
+
+        return orderMapper.toResponseDto(updatedOrder);
+    }
+
     private User getCurrentAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
@@ -138,5 +204,26 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Authenticated user not found with email: " + authentication.getName()
                 ));
+    }
+
+    private boolean isValidStatusTransition(Order.Status currentStatus, Order.Status newStatus) {
+        return (currentStatus == Order.Status.PENDING
+                && (newStatus == Order.Status.CONFIRMED || newStatus == Order.Status.CANCELLED))
+                || (currentStatus == Order.Status.CONFIRMED
+                && (newStatus == Order.Status.SHIPPED || newStatus == Order.Status.CANCELLED))
+                || (currentStatus == Order.Status.SHIPPED
+                && newStatus == Order.Status.DELIVERED);
+    }
+
+    private void restoreStock(Order order) {
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Product product = orderItem.getProduct();
+            product.setStockQuantity(product.getStockQuantity() + orderItem.getQuantity());
+        }
+    }
+
+    private boolean canAccessOrder(User currentUser, Order order) {
+        return currentUser.getRole() == User.Role.ADMIN
+                || order.getUser().getId().equals(currentUser.getId());
     }
 }
