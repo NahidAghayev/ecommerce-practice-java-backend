@@ -1,6 +1,7 @@
 package com.aghayev.ecommerce.service;
 
 import com.aghayev.ecommerce.config.LogExecutionTime;
+import com.aghayev.ecommerce.dto.PageResponse;
 import com.aghayev.ecommerce.dto.request.OrderItemRequestDto;
 import com.aghayev.ecommerce.dto.request.OrderRequestDto;
 import com.aghayev.ecommerce.dto.response.OrderResponseDto;
@@ -15,11 +16,13 @@ import com.aghayev.ecommerce.mapper.OrderMapper;
 import com.aghayev.ecommerce.repository.OrderRepository;
 import com.aghayev.ecommerce.repository.ProductRepository;
 import com.aghayev.ecommerce.repository.UserRepository;
+
+import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -112,13 +115,14 @@ public class OrderService {
 
     @LogExecutionTime
     @Transactional(readOnly = true)
-    public List<OrderResponseDto> getMyOrders() {
+    public PageResponse<OrderResponseDto> getMyOrders(Pageable pageable) {
         User currentUser = getCurrentAuthenticatedUser();
         log.debug("action=getMyOrders userId={}", currentUser.getId());
-        return orderRepository.findByUserOrderByCreatedAtDesc(currentUser)
-                .stream()
-                .map(orderMapper::toResponseDto)
-                .toList();
+        Page<Order> orders = orderRepository.findByUserOrderByCreatedAtDesc(currentUser, pageable);
+
+        Page<OrderResponseDto> mappedOrders = orders.map(orderMapper::toResponseDto);
+
+        return PageResponse.from(mappedOrders);
     }
 
     private User getCurrentAuthenticatedUser() {

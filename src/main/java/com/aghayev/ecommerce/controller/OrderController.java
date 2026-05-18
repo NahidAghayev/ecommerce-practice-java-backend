@@ -1,12 +1,14 @@
 package com.aghayev.ecommerce.controller;
 
 import com.aghayev.ecommerce.dto.ApiResponse;
+import com.aghayev.ecommerce.dto.PageResponse;
 import com.aghayev.ecommerce.dto.request.OrderRequestDto;
 import com.aghayev.ecommerce.dto.response.OrderResponseDto;
 import com.aghayev.ecommerce.service.OrderService;
 import jakarta.validation.Valid;
+
+import org.springframework.data.domain.Pageable;
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +40,9 @@ public class OrderController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<OrderResponseDto>>> getMyOrders() {
-        return ResponseEntity.ok(ApiResponse.success(orderService.getMyOrders(), "Orders retrieved successfully"));
+    public ResponseEntity<ApiResponse<PageResponse<OrderResponseDto>>> getMyOrders(
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(orderService.getMyOrders(pageable), "Orders retrieved successfully"));
     }
 }
