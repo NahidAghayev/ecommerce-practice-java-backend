@@ -1,6 +1,7 @@
 package com.aghayev.ecommerce.service;
 
 import com.aghayev.ecommerce.config.LogExecutionTime;
+import com.aghayev.ecommerce.dto.PageResponse;
 import com.aghayev.ecommerce.dto.request.ProductRequestDto;
 import com.aghayev.ecommerce.dto.response.ProductResponseDto;
 import com.aghayev.ecommerce.entity.Product;
@@ -23,7 +24,7 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     @LogExecutionTime
-    public Page<ProductResponseDto> getProducts(Pageable pageable, String category) {
+    public PageResponse<ProductResponseDto> getProducts(Pageable pageable, String category) {
         log.debug(
                 "action=getProducts page={} size={} sort={} category={}",
                 pageable.getPageNumber(),
@@ -35,7 +36,8 @@ public class ProductService {
                 ? productRepository.findAll(pageable)
                 : productRepository.findByCategory(category, pageable);
 
-        return products.map(productMapper::toResponseDto);
+        Page<ProductResponseDto> mappedProducts = products.map(productMapper::toResponseDto);
+        return PageResponse.from(mappedProducts);
     }
 
     @LogExecutionTime

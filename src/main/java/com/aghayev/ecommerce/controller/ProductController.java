@@ -1,6 +1,7 @@
 package com.aghayev.ecommerce.controller;
 
 import com.aghayev.ecommerce.dto.ApiResponse;
+import com.aghayev.ecommerce.dto.PageResponse;
 import com.aghayev.ecommerce.dto.request.ProductRequestDto;
 import com.aghayev.ecommerce.dto.response.ProductResponseDto;
 import com.aghayev.ecommerce.service.ProductService;
@@ -30,7 +31,7 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ProductResponseDto>>> getProducts(
+    public ResponseEntity<ApiResponse<PageResponse<ProductResponseDto>>> getProducts(
             Pageable pageable,
             @RequestParam(required = false) String category
     ) {
