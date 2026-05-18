@@ -5,14 +5,20 @@ import com.aghayev.ecommerce.dto.PageResponse;
 import com.aghayev.ecommerce.dto.request.ProductRequestDto;
 import com.aghayev.ecommerce.dto.response.ProductResponseDto;
 import com.aghayev.ecommerce.entity.Product;
+import com.aghayev.ecommerce.exception.BadRequestException;
 import com.aghayev.ecommerce.exception.ResourceNotFoundException;
 import com.aghayev.ecommerce.mapper.ProductMapper;
 import com.aghayev.ecommerce.repository.ProductRepository;
+
+import java.math.BigDecimal;
 import java.util.UUID;
+
+import com.aghayev.ecommerce.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -24,17 +30,40 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     @LogExecutionTime
-    public PageResponse<ProductResponseDto> getProducts(Pageable pageable, String category) {
+    public PageResponse<ProductResponseDto> getProducts(
+            Pageable pageable,
+            String category,
+            BigDecimal minPrice,
+            BigDecimal maxPrice
+
+    ) {
         log.debug(
-                "action=getProducts page={} size={} sort={} category={}",
+                "action=getProducts page={} size={} sort={} category={} minPrice={} maxPrice={}",
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 pageable.getSort(),
-                category
+                category,
+                minPrice,
+                maxPrice
         );
-        Page<Product> products = category == null || category.isBlank()
-                ? productRepository.findAll(pageable)
-                : productRepository.findByCategory(category, pageable);
+
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new BadRequestException("Minimum price cannot be greater than maximum price", "minPrice");
+        }
+
+        Specification<Product> spec = Specification.where(null);
+
+        if (category != null && !category.isBlank()) {
+            spec = spec.and(ProductSpecification.hasCategory(category));
+        }
+        if (minPrice != null) {
+            spec = spec.and(ProductSpecification.priceGreaterThanOrEqualTo(minPrice));
+        }
+        if (maxPrice != null) {
+            spec = spec.and(ProductSpecification.priceLessThanOrEqualTo(maxPrice));
+        }
+
+        Page<Product> products = productRepository.findAll(spec, pageable);
 
         Page<ProductResponseDto> mappedProducts = products.map(productMapper::toResponseDto);
         return PageResponse.from(mappedProducts);

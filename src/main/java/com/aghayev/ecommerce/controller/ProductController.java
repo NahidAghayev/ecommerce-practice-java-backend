@@ -6,6 +6,8 @@ import com.aghayev.ecommerce.dto.request.ProductRequestDto;
 import com.aghayev.ecommerce.dto.response.ProductResponseDto;
 import com.aghayev.ecommerce.service.ProductService;
 import jakarta.validation.Valid;
+
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -32,10 +34,12 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProductResponseDto>>> getProducts(
             Pageable pageable,
-            @RequestParam(required = false) String category
-    ) {
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice
+            ) {
         return ResponseEntity.ok(ApiResponse.success(
-                productService.getProducts(pageable, category),
+                productService.getProducts(pageable, category, minPrice, maxPrice),
                 "Products retrieved successfully"
         ));
     }
