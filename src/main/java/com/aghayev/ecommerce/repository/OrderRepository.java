@@ -13,7 +13,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
-    @EntityGraph(attributePaths = {"user", "orderItems", "orderItems.product"})
     Page<Order> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
     @EntityGraph(attributePaths = {"user", "orderItems", "orderItems.product"})

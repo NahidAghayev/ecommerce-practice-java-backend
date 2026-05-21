@@ -5,10 +5,10 @@ import com.aghayev.ecommerce.dto.request.AuthRegisterRequestDto;
 import com.aghayev.ecommerce.dto.response.AuthResponseDto;
 import com.aghayev.ecommerce.entity.User;
 import com.aghayev.ecommerce.exception.BadRequestException;
+import com.aghayev.ecommerce.exception.UnauthorizedException;
 import com.aghayev.ecommerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -41,10 +41,10 @@ public class AuthService {
 
     public AuthResponseDto login(AuthLoginRequestDto authLoginRequestDto) {
         User user = userRepository.findByEmail(authLoginRequestDto.email())
-                .orElseThrow(() -> new UsernameNotFoundException("Username does not exist"));
+                .orElseThrow(() -> new UnauthorizedException("Invalid email or password", "credentials"));
 
         if (!passwordEncoder.matches(authLoginRequestDto.password(), user.getPassword())) {
-            throw new BadRequestException("Invalid email or password", "credentials");
+            throw new UnauthorizedException("Invalid email or password", "credentials");
         }
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(user.getEmail());

@@ -11,6 +11,7 @@ import com.aghayev.ecommerce.entity.OrderItem;
 import com.aghayev.ecommerce.entity.Product;
 import com.aghayev.ecommerce.entity.User;
 import com.aghayev.ecommerce.exception.BadRequestException;
+import com.aghayev.ecommerce.exception.ForbiddenException;
 import com.aghayev.ecommerce.exception.InsufficientStockException;
 import com.aghayev.ecommerce.exception.ResourceNotFoundException;
 import com.aghayev.ecommerce.mapper.OrderMapper;
@@ -124,7 +125,7 @@ public class OrderService {
                     order.getUser().getId()
             );
 
-            throw new BadRequestException("You do not have permission to access this order", "orderId");
+            throw new ForbiddenException("You do not have permission to access this order", "orderId");
         }
 
         return orderMapper.toResponseDto(order);

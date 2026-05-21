@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,6 +42,24 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<ValidationErrorResponseDto>> handleUnauthorized(UnauthorizedException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(
+                        exception.getMessage(),
+                        new ValidationErrorResponseDto(exception.getFieldName(), exception.getMessage())
+                ));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResponse<ValidationErrorResponseDto>> handleForbidden(ForbiddenException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(
+                        exception.getMessage(),
+                        new ValidationErrorResponseDto(exception.getFieldName(), exception.getMessage())
+                ));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<List<ValidationErrorResponseDto>>> handleValidation(
             MethodArgumentNotValidException exception
@@ -58,6 +77,12 @@ public class GlobalExceptionHandler {
                         "Request validation failed",
                         LocalDateTime.now()
                 ));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Access denied", null));
     }
 
     @ExceptionHandler(Exception.class)

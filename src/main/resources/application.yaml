@@ -6,7 +6,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:VGhpc0lzQVN1ZmZpY2llbnRseUxvbmdCYXNlNjRTZWNyZXRLZXlGb3JKV1RIUzI1Ng==}
     expiration: ${JWT_EXPIRATION:86400000}
   security:
     public-paths:

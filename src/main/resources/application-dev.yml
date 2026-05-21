@@ -5,11 +5,17 @@ spring:
     password: postgres
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
+      generate_statistics: true
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+app:
+  jwt:
+    secret: VGhpc0lzQVN1ZmZpY2llbnRseUxvbmdCYXNlNjRTZWNyZXRLZXlGb3JKV1RIUzI1Ng==
+    expiration: 86400000
 
 logging:
   level:
